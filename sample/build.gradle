@@ -1,32 +1,45 @@
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+
 buildscript {
     repositories {
         google()
-        jcenter()
+        mavenCentral()
+        maven{ url 'https://maven.aliyun.com/repository/jcenter' }
     }
 }
 
 repositories {
     google()
-    jcenter()
+    mavenCentral()
+    maven{ url 'https://maven.aliyun.com/repository/jcenter' }
 }
-
-apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 28
 
     defaultConfig {
-        minSdkVersion 14
+        minSdkVersion 17
         targetSdkVersion 28
         versionCode 3
         versionName "3.0.0"
     }
 
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+
+    buildFeatures {
+        viewBinding true
+    }
 }
 
 dependencies {
     implementation project(':android-pdf-viewer')
     implementation 'androidx.appcompat:appcompat:1.0.0'
-    implementation 'org.androidannotations:androidannotations-api:4.6.0'
-    annotationProcessor "org.androidannotations:androidannotations:4.6.0"
 }

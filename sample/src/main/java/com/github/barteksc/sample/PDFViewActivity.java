@@ -15,40 +15,41 @@
  */
 package com.github.barteksc.sample;
 
+import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.AsyncTask;
+import android.os.Bundle;
 import android.provider.OpenableColumns;
-import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-import androidx.appcompat.app.AppCompatActivity;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.Toast;
 
-import com.github.barteksc.pdfviewer.PDFView;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
 import com.github.barteksc.pdfviewer.listener.OnLoadCompleteListener;
 import com.github.barteksc.pdfviewer.listener.OnPageChangeListener;
 import com.github.barteksc.pdfviewer.listener.OnPageErrorListener;
 import com.github.barteksc.pdfviewer.scroll.DefaultScrollHandle;
 import com.github.barteksc.pdfviewer.util.FitPolicy;
+import com.github.barteksc.sample.databinding.ActivityMainBinding;
 import com.shockwave.pdfium.PdfDocument;
 
-import org.androidannotations.annotations.AfterViews;
-import org.androidannotations.annotations.EActivity;
-import org.androidannotations.annotations.NonConfigurationInstance;
-import org.androidannotations.annotations.OnActivityResult;
-import org.androidannotations.annotations.OptionsItem;
-import org.androidannotations.annotations.OptionsMenu;
-import org.androidannotations.annotations.ViewById;
-
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.ref.WeakReference;
+import java.net.URL;
 import java.util.List;
 
-@EActivity(R.layout.activity_main)
-@OptionsMenu(R.menu.options)
 public class PDFViewActivity extends AppCompatActivity implements OnPageChangeListener, OnLoadCompleteListener,
         OnPageErrorListener {
 
@@ -60,33 +61,64 @@ public class PDFViewActivity extends AppCompatActivity implements OnPageChangeLi
     public static final String SAMPLE_FILE = "sample.pdf";
     public static final String READ_EXTERNAL_STORAGE = "android.permission.READ_EXTERNAL_STORAGE";
 
-    @ViewById
-    PDFView pdfView;
-
-    @NonConfigurationInstance
     Uri uri;
 
-    @NonConfigurationInstance
     Integer pageNumber = 0;
 
     String pdfFileName;
 
-    @OptionsItem(R.id.pickFile)
-    void pickFile() {
-        int permissionCheck = ContextCompat.checkSelfPermission(this,
-                READ_EXTERNAL_STORAGE);
+    ActivityMainBinding activityMainBinding;
 
-        if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(
-                    this,
-                    new String[]{READ_EXTERNAL_STORAGE},
-                    PERMISSION_CODE
-            );
+    @Override
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        activityMainBinding = ActivityMainBinding.inflate(getLayoutInflater());
+        setContentView(activityMainBinding.getRoot());
 
-            return;
+        activityMainBinding.pdfView.setBackgroundColor(Color.LTGRAY);
+        if (uri != null) {
+            displayFromUri(uri);
+        } else {
+            displayFromAsset(SAMPLE_FILE);
         }
+        setTitle(pdfFileName);
+    }
 
-        launchPicker();
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.options, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if(item.getItemId() == R.id.pickFile) {
+            int permissionCheck = ContextCompat.checkSelfPermission(this,
+                    READ_EXTERNAL_STORAGE);
+
+            if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(
+                        this,
+                        new String[]{READ_EXTERNAL_STORAGE},
+                        PERMISSION_CODE
+                );
+                return true;
+            }
+            launchPicker();
+        }else if(item.getItemId() == R.id.loadUrl) {
+            displayFromUrl();
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == RESULT_OK) {
+            uri = data.getData();
+            displayFromUri(uri);
+        }
     }
 
     void launchPicker() {
@@ -100,21 +132,16 @@ public class PDFViewActivity extends AppCompatActivity implements OnPageChangeLi
         }
     }
 
-    @AfterViews
-    void afterViews() {
-        pdfView.setBackgroundColor(Color.LTGRAY);
-        if (uri != null) {
-            displayFromUri(uri);
-        } else {
-            displayFromAsset(SAMPLE_FILE);
-        }
-        setTitle(pdfFileName);
+    private void displayFromUrl() {
+    //    String url = "http://192.168.0.101:5500/docs/test1.pdf";
+        String url = "http://192.168.0.101:5500/docs/test3.pdf";
+        new DownloadAsyncTask(this, url).execute();
     }
 
     private void displayFromAsset(String assetFileName) {
         pdfFileName = assetFileName;
 
-        pdfView.fromAsset(SAMPLE_FILE)
+        activityMainBinding.pdfView.fromAsset(SAMPLE_FILE)
                 .defaultPage(pageNumber)
                 .onPageChange(this)
                 .enableAnnotationRendering(true)
@@ -129,7 +156,7 @@ public class PDFViewActivity extends AppCompatActivity implements OnPageChangeLi
     private void displayFromUri(Uri uri) {
         pdfFileName = getFileName(uri);
 
-        pdfView.fromUri(uri)
+        activityMainBinding.pdfView.fromUri(uri)
                 .defaultPage(pageNumber)
                 .onPageChange(this)
                 .enableAnnotationRendering(true)
@@ -140,13 +167,6 @@ public class PDFViewActivity extends AppCompatActivity implements OnPageChangeLi
                 .load();
     }
 
-    @OnActivityResult(REQUEST_CODE)
-    public void onResult(int resultCode, Intent intent) {
-        if (resultCode == RESULT_OK) {
-            uri = intent.getData();
-            displayFromUri(uri);
-        }
-    }
 
     @Override
     public void onPageChanged(int page, int pageCount) {
@@ -176,7 +196,7 @@ public class PDFViewActivity extends AppCompatActivity implements OnPageChangeLi
 
     @Override
     public void loadComplete(int nbPages) {
-        PdfDocument.Meta meta = pdfView.getDocumentMeta();
+        PdfDocument.Meta meta = activityMainBinding.pdfView.getDocumentMeta();
         Log.e(TAG, "title = " + meta.getTitle());
         Log.e(TAG, "author = " + meta.getAuthor());
         Log.e(TAG, "subject = " + meta.getSubject());
@@ -186,7 +206,7 @@ public class PDFViewActivity extends AppCompatActivity implements OnPageChangeLi
         Log.e(TAG, "creationDate = " + meta.getCreationDate());
         Log.e(TAG, "modDate = " + meta.getModDate());
 
-        printBookmarksTree(pdfView.getTableOfContents(), "-");
+        printBookmarksTree(activityMainBinding.pdfView.getTableOfContents(), "-");
 
     }
 
@@ -222,5 +242,53 @@ public class PDFViewActivity extends AppCompatActivity implements OnPageChangeLi
     @Override
     public void onPageError(int page, Throwable t) {
         Log.e(TAG, "Cannot load page " + page);
+    }
+
+    class DownloadAsyncTask extends AsyncTask<Void, Void, InputStream> {
+        WeakReference<PDFViewActivity> pdfViewActivityWeakReference;
+        String url;
+        DownloadAsyncTask(PDFViewActivity pdfViewActivity, String url) {
+            pdfViewActivityWeakReference = new WeakReference(pdfViewActivity);
+            this.url = url;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        private boolean checkValid() {
+            Activity activity = pdfViewActivityWeakReference.get();
+            return  !(activity == null || activity.isFinishing() || activity.isDestroyed());
+        }
+
+        @Override
+        protected InputStream doInBackground(Void... voids) {
+            try {
+                if(!checkValid()) {
+                    return null;
+                }
+                return new URL(url).openStream();
+            } catch (IOException e) {
+                e.printStackTrace();
+                return null;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(InputStream inputStream) {
+            super.onPostExecute(inputStream);
+            if(inputStream != null) {
+                activityMainBinding.pdfView.fromStream(inputStream)
+                        .defaultPage(pageNumber)
+                        .onPageChange(pdfViewActivityWeakReference.get())
+                        .enableAnnotationRendering(true)
+                        .onLoad(pdfViewActivityWeakReference.get())
+                        .scrollHandle(new DefaultScrollHandle(pdfViewActivityWeakReference.get()))
+                        .spacing(10) // in dp
+                        .onPageError(pdfViewActivityWeakReference.get())
+                        .load();
+            }
+        }
     }
 }

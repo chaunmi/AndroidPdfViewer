@@ -5,5 +5,12 @@
         android:id="@+id/pickFile"
         android:icon="@drawable/ic_open_in_browser_grey_700_48dp"
         android:title="@string/pick_file"
+        android:orderInCategory="100"
         app:showAsAction="always" />
+
+    <item android:id="@+id/loadUrl"
+        android:title="@string/load_url"
+        android:orderInCategory="200"
+        app:showAsAction="never"
+        />
 </menu>
