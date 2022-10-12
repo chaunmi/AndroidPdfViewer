@@ -1,6 +1,6 @@
 
 buildscript {
-    ext.kotlin_version = '1.6.10'
+    ext.kotlin_version = '1.4.0'
     repositories {
         google()
         mavenCentral()
@@ -9,8 +9,8 @@ buildscript {
     dependencies {
         classpath 'com.android.tools.build:gradle:4.2.2'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.4'
-        classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'
+   //     classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.4'
+   //     classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'
     }
 }
 

@@ -1,6 +1,6 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-parcelize'
+//apply plugin: 'kotlin-parcelize'
 
 ext {
     bintrayRepo = 'maven'
@@ -33,14 +33,34 @@ android {
         minSdkVersion 14
         targetSdkVersion 28
         versionCode 1
-        versionName "3.2.0-beta.1"
+        versionName libraryVersion
+    }
+
+    buildTypes {
+        debug {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
     }
 
 }
 
+android.libraryVariants.all { variant ->
+    variant.outputs.all {
+        //在这里修改apk文件名，引号内的字符串都可以随便定义
+        if(variant.buildType.name.toLowerCase().contains("release")) {
+            outputFileName = "AndroidPdfViewer_${variant.buildType.name}_V${libraryVersion}.aar"
+        }
+    }
+}
 
 dependencies {
-    api fileTree(dir: 'libs', include: ["*.jar","*.aar"])
+    compileOnly fileTree(dir: 'libs', include: ["*.jar","*.aar"])
     implementation 'androidx.core:core:1.0.0'
  //   api 'com.github.barteksc:pdfium-android:1.9.0'
 }

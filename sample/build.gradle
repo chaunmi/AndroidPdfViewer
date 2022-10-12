@@ -16,11 +16,11 @@ repositories {
 }
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion 29
 
     defaultConfig {
         minSdkVersion 17
-        targetSdkVersion 28
+        targetSdkVersion 29
         versionCode 3
         versionName "3.0.0"
     }
@@ -30,6 +30,15 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
+    signingConfigs {
+        release {
+            storeFile file("../demo.jks")
+            storePassword  '123456'
+            keyAlias 'demo'
+            keyPassword '123456'
+        }
+    }
+
     kotlinOptions {
         jvmTarget = "1.8"
     }
@@ -37,10 +46,24 @@ android {
     buildFeatures {
         viewBinding true
     }
+
+    buildTypes {
+        debug {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
+    }
 }
 
 dependencies {
-    implementation project(':android-pdf-viewer')
+    implementation fileTree(dir: 'libs', include: ["*.jar","*.aar"])
+ //   implementation project(':android-pdf-viewer')
     implementation 'androidx.appcompat:appcompat:1.0.0'
     implementation "androidx.core:core-ktx:1.6.0"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
