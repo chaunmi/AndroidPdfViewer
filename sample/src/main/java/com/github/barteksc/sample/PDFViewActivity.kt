@@ -68,6 +68,9 @@ class PDFViewActivity : AppCompatActivity(), OnPageChangeListener, OnLoadComplet
         } else {
             displayFromAsset(SAMPLE_FILE)
         }
+        val left = resources.getDimensionPixelSize(R.dimen.default_padding_left_right)
+        val top = resources.getDimensionPixelSize(R.dimen.default_padding_top_bottom)
+        activityMainBinding?.tvPageCounter?.setPadding(left, top, left, top)
         title = pdfFileName
     }
 
@@ -151,6 +154,8 @@ class PDFViewActivity : AppCompatActivity(), OnPageChangeListener, OnLoadComplet
     override fun onPageChanged(page: Int, pageCount: Int) {
         pageNumber = page
         title = String.format("%s %s / %s", pdfFileName, page + 1, pageCount)
+
+        activityMainBinding?.tvPageCounter?.text = "${page + 1} / $pageCount"
     }
 
     fun getFileName(uri: Uri?): String? {
